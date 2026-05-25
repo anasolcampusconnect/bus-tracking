@@ -19,7 +19,7 @@ function ProtectedRoute({ children, allowedRole }) {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/bus-tracking">
         <Navbar />
 
         <Routes>
