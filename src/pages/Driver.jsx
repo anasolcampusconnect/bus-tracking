@@ -5,7 +5,7 @@ function Driver() {
   const [tripStatus, setTripStatus] = useState('Not Started'); // 'Not Started', 'Running', 'Paused', 'Completed'
   const [isLiveTracking, setIsLiveTracking] = useState(false);
   
-  // Real-time bus progress tracking hook state (0 to 100 percent)
+  // Real-time bus progress tracking state (0 to 100 percent)
   const [busProgress, setBusProgress] = useState(0); 
   const progressIntervalRef = useRef(null);
 
@@ -25,7 +25,7 @@ function Driver() {
 
   // --- ENGINE TRIP SIMULATION CONTROLLERS ---
   const handleStartTrip = () => {
-    // RE-START LOGIC: If trip is completed or not started, reset progress to 0 (Madhapur)
+    // RE-START LOGIC: If completed or fresh start, reset to Madhapur (0%)
     if (tripStatus === 'Completed' || tripStatus === 'Not Started') {
       setBusProgress(0);
     }
@@ -33,9 +33,9 @@ function Driver() {
     setTripStatus('Running');
     setIsLiveTracking(true);
 
-    // Dynamic progression loop animation ticker
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     
+    // Very fine-grained steps (0.1% updates) every 30ms for maximum fluid frame rates
     progressIntervalRef.current = setInterval(() => {
       setBusProgress((prevProgress) => {
         if (prevProgress >= 100) {
@@ -44,9 +44,9 @@ function Driver() {
           setIsLiveTracking(false);
           return 100;
         }
-        return prevProgress + 0.4; // Smooth increment step (No Jumps!)
+        return prevProgress + 0.15; // Decreased step size for pure fluid micro-movements
       });
-    }, 50); // Frame tick execution velocity
+    }, 30);
   };
 
   const handlePauseTrip = () => {
@@ -61,11 +61,10 @@ function Driver() {
       clearInterval(progressIntervalRef.current);
     }
     setTripStatus('Completed');
-    setBusProgress(100); // Instantly moves to school terminal end
+    setBusProgress(100); 
     setIsLiveTracking(false);
   };
 
-  // Clean up timers on component unmount
   useEffect(() => {
     return () => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -93,7 +92,7 @@ function Driver() {
             <div className='hidden md:block text-gray-300'>|</div>
             <div>🚌 <span className='text-gray-500'>Bus No:</span> <strong className='text-gray-900'>TS09AB1234</strong></div>
             <div className='hidden md:block text-gray-300'>|</div>
-            <div>📍 <span className='text-gray-500'>Route:</span> <strong className='text-gray-900'>Route 44 Madhapur - School</strong></div>
+            <div>📍 <span className='text-gray-500'>Route:</span> <strong className='text-gray-900'>Route 44 - Madhapur Express</strong></div>
           </div>
         </header>
 
@@ -185,26 +184,27 @@ function Driver() {
               {/* Progress Line Graph Container */}
               <div className='relative px-12 py-12 bg-gray-50 rounded-xl select-none'>
                 
-                {/* ================= CONTINUOUS SMOOTH MOVING BUS ICON ================= */}
+                {/* ================= ZERO-JUMP SMOOTH REALTIME BUS ================= */}
                 <div 
-                  className="absolute top-[40px] text-2xl z-30 transform -translate-x-1/2"
+                  className="absolute top-[48px] text-2xl z-30 transform -translate-x-1/2"
                   style={{
-                    /* Calculations map exact smooth line width coordinates */
-                    left: `calc(${busProgress}% + (48px - ${busProgress * 0.96}px))`,
-                    transition: 'left 50ms linear', // Matches the interval delay for zero jumps!
-                    animation: tripStatus === 'Running' ? 'bounce 0.6s infinite alternate' : 'none'
+                    /* Calc logic matches exact track line coordinates without any jumps */
+                    left: `calc(${busProgress}% + (40px - ${busProgress * 0.8}px))`,
+                    /* Animation attribute completely flattened out to keep it strictly on a straight horizontal line */
+                    animation: 'none' 
                   }}
                 >
-                  <div className="relative flex flex-col items-center">
-                    <span className={`text-[10px] px-2 py-0.5 rounded absolute -top-7 whitespace-nowrap shadow-md text-white font-bold ${
-                      tripStatus === 'Running' ? 'bg-green-600' : 'bg-slate-800'
-                    }`}>
-                      {tripStatus === 'Not Started' ? '📍 Madhapur' : 
-                       tripStatus === 'Running' ? '🚚 Moving...' : 
-                       tripStatus === 'Paused' ? '⏸️ Paused' : '🏫 Arrived'}
-                    </span>
-                    🚌
-                  </div>
+              <div className="relative flex flex-col items-center">
+    {/* Status Badge Over moving Bus */}
+    <span className={`text-[10px] px-2 py-0.5 rounded absolute -top-7 whitespace-nowrap shadow-md text-white font-bold transition-all ${
+      tripStatus === 'Running' ? 'bg-green-600' : 'bg-slate-800'
+    }`}>
+      {tripStatus === 'Not Started' ? '📍 Madhapur' : 
+       tripStatus === 'Running' ? '🚚 Moving...' : 
+       tripStatus === 'Paused' ? '⏸️ Paused' : '🏫 Arrived'}
+    </span>
+    🚌
+  </div>
                 </div>
 
                 {/* Visual Layout Stops Track */}
@@ -213,7 +213,6 @@ function Driver() {
                     let circleColor = 'border-blue-500 bg-white text-blue-600'; 
                     let textColor = 'text-gray-500';
 
-                    // Node dynamic highlight relative to exact progressive position percentage
                     if (busProgress >= stop.percentage) {
                       circleColor = 'bg-green-600 border-green-600 text-white';
                       textColor = 'text-green-700 font-semibold';
@@ -228,7 +227,7 @@ function Driver() {
                           {index === routeStops.length - 1 ? '🏫' : index + 1}
                         </div>
                         <span className={`text-xs mt-2 text-center whitespace-nowrap ${textColor}`}>
-                          {stop.name.split(" ")[0]} {/* Short name format for clean grid layout */}
+                          {stop.name.split(" ")[0]}
                         </span>
                       </div>
                     );
@@ -240,8 +239,7 @@ function Driver() {
                   <div 
                     className="h-full bg-green-500" 
                     style={{ 
-                      width: `${busProgress}%`,
-                      transition: 'width 50ms linear'
+                      width: `${busProgress}%`
                     }}
                   />
                 </div>
